@@ -107,3 +107,41 @@ TreeParametr$Species %>% unique()
 #Должны быть созданы переменные координат(lat,lon) в британской системе координат(с учетом кодов квадратов) и в WGS84
 
 library(stringr)
+TreeParametr$`Grid Reference`
+#создаем таблицы coord,coord_N, coord_E, quadr
+coord = str_replace_all(TreeParametr$`Grid Reference`, " ","")
+#убираем знаки сначала с сев стор, затем юж
+coord_N = str_trunc(coord, 12, "right", ellipsis = "") %>% str_trunc(5, "left", ellipsis = "")
+coord_E = str_trunc(coord, 7, "right", ellipsis = "") %>% str_trunc(5, "left", ellipsis = "")
+quadr = str_trunc(coord, 2, "right", ellipsis = "") #названия квадратов
+#собираем таблицы coord_N,coord_E, quadr в одну table_coo
+table_coo = data.frame(as.integer(coord_N), as.integer(coord_E), quadr)
+#нужно переименовать столбцы
+names(table_coo) = c("N", "E", "quadr")
+#убираем строки с NA
+table_coo = na.exclude(table_coo)
+
+table_coo = table_coo %>% mutate("Easting_BC" = case_when(
+  #добавляем данные из таблицы к квадратами для E, затем для N
+quadr == "TF" ~ E + 600000,
+quadr == "TG" ~ E + 700000,
+quadr == "TL" ~ E + 600000,
+))
+table_coo = table_coo %>% mutate("Northing_BC" = case_when(  
+quadr == "TF" ~ N + 300000,
+quadr == "TG" ~ N + 300000,
+quadr == "TL" ~ N + 200000,  
+))  
+table_coo = na.exclude(table_coo) 
+#прописываем координаты для Британии
+install.packages("sf")
+library(sf)
+table_WGS = 
+table_coo %>%
+st_as_sf(coords = c("Easting_BC", "Northing_BC"), crs = 27700) %>%
+st_transform(4326) %>%
+st_coordinates() %>% as.data.frame()
+#собираем таблицу, чтобы было видно координаты
+table_WGS = data.frame(Lat = table_WGS$Y, Lon = table_WGS$X)
+table_WGS %>% head()
+
