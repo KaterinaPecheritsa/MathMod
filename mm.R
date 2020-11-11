@@ -145,3 +145,14 @@ st_coordinates() %>% as.data.frame()
 table_WGS = data.frame(Lat = table_WGS$Y, Lon = table_WGS$X)
 table_WGS %>% head()
 
+head(table_coo = str_replace_all(`Grid Reference`))
+
+TreeParametr = TreeParametr %>%
+mutate(coord = str_replace_all(TreeParametr$`Grid Reference`, " ","")) %>%
+  mutate(N = str_trunc(coord, 12, "right", ellipsis = "") %>% 
+         str_trunc(5, "left", ellipsis = "")%>% as.integer()) %>%
+  mutate(E = str_trunc(coord, 7, "right", ellipsis = "") %>%
+           str_trunc(5, "left", ellipsis = "") %>% as.integer()) %>%
+  mutate(quadr = str_trunc(coord, 2, "right", ellipsis = ""))
+
+TreeParametr = left_join(TreeParametr, table_coo, by = c("quadr","N","E"))
